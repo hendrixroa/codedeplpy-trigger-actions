@@ -11,8 +11,15 @@ variable "memory" {
 }
 
 variable "subnets" {
+  default = []
 }
 
-variable "security_group" {}
+variable "security_group" {
+  default = []
+}
 
 variable "environment_variables" {}
+
+variable "runtime" {
+  default = "nodejs10.x"
+}

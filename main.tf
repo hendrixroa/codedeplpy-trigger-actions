@@ -6,7 +6,7 @@ module "lambda_codedeploy_trigger" {
   filename             = "codedeploytrigger.zip"
   lambda_iam_role      = aws_iam_role.lambda_codedeploytrigger.arn
   lambda_function_name = "CodedeployTrigger"
-  lambda_runtime       = "nodejs10.x"
+  lambda_runtime       = var.runtime
   timeout              = var.timeout
   memory               = var.memory
   layer_arn            = var.lambda_layer_arn
