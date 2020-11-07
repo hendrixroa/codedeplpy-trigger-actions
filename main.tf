@@ -12,7 +12,7 @@ module "lambda_codedeploy_trigger" {
   layer_arn            = var.lambda_layer_arn
 
   subnets = var.subnets
-  sg_ids  = var.security_group
+  sg_ids  = flatten(var.security_group)
 
   environment_variables = var.environment_variables
 }
