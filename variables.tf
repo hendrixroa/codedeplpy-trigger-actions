@@ -23,3 +23,9 @@ variable "environment_variables" {}
 variable "runtime" {
   default = "nodejs10.x"
 }
+
+variable "enabled" {
+  default = 1
+}
+
+variable "sns_topic_arn" {}
