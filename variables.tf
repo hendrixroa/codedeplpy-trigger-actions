@@ -15,7 +15,7 @@ variable "subnets" {
 }
 
 variable "security_group" {
-  default = []
+  default = ""
 }
 
 variable "environment_variables" {}
