@@ -2,7 +2,7 @@
 module "lambda_codedeploy_trigger" {
   source               = "hendrixroa/lambda/aws"
   enabled              = var.enabled
-  code_location        = "src/"
+  code_location        = "${path.module}/${var.code_source}"
   filename             = "codedeploytrigger.zip"
   lambda_iam_role      = aws_iam_role.lambda_codedeploytrigger.arn
   lambda_function_name = "CodedeployTrigger"
@@ -12,7 +12,7 @@ module "lambda_codedeploy_trigger" {
   layer_arn            = var.lambda_layer_arn
 
   subnets = var.subnets
-  sg_ids  = [ var.security_group ]
+  sg_ids  = var.security_group
 
   environment_variables = var.environment_variables
 }

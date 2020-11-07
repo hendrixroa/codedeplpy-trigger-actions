@@ -29,3 +29,7 @@ variable "enabled" {
 }
 
 variable "sns_topic_arn" {}
+
+variable "code_source" {
+  default = "src"
+}
