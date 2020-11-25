@@ -4,6 +4,7 @@ const FunctionShield = require('@puresec/function-shield');
 const lz = require('lz-string');
 const logger = require('pino')();
 const awsAPIGTIntegration = require('swagger-aws-api-gateway');
+const { WebClient } = require('@slack/web-api');
 
 const ENV = process.env;
 const slackInfraAlertBot = ENV.slack_infra_alert_bot;
@@ -14,6 +15,8 @@ const apiStage = ENV.api_stage;
 const apiDomain = ENV.api_domain;
 const webhookDocs = ENV.webhook_docs;
 const slackChannel = ENV.slack_channel;
+
+const slackClient = new WebClient(slackInfraAlertBot);
 
 FunctionShield.configure(
     {
@@ -45,16 +48,14 @@ exports.handler = async (event, context) => {
         return context.fail(error);
     }
 
+    let postData = {
+        channel: `#${slackChannel}`,
+        mrkdwn: true
+    };
+
     try {
 
         await deployAPIGateway();
-
-        let postData = {
-            channel: `#${slackChannel}`,
-            username: 'AWS Deploy',
-            icon_emoji: ':tada:',
-            mrkdwn: true
-        };
 
         if (messageJSON.status === 'FAILED') {
             severity = 'danger';
@@ -72,27 +73,32 @@ exports.handler = async (event, context) => {
             return context.succeed();
         }
 
-        postData.attachments = [
-            {
-                color: severity,
-                author_name: `DEPLOYMENT - ${stage.toUpperCase()}`,
-                text: `*${appName}*: ${commit} (<${link}|Codedeploy>)`,
-                mrkdwn_in: ['text'],
-            }
-        ];
-
-        const options = {
-            method: 'post',
-            url: 'https://slack.com/api/chat.postMessage',
-            data: postData,
-            headers: {
-                'Authorization': `Bearer ${slackInfraAlertBot}`
-            }
-        };
-
-        await doRequest(options);
+        await slackClient.chat.postMessage({
+            ...postData,
+            attachments: [
+                {
+                    color: severity,
+                    author_name: `DEPLOYMENT - ${stage.toUpperCase()}`,
+                    text: `*${appName}*: ${commit} (<${link}|Codedeploy>)`,
+                    mrkdwn_in: 'text',
+                },
+            ],
+        });
     } catch (error) {
         logger.error(error);
+
+        // Notify errors to slack
+        await slackClient.chat.postMessage({
+            ...postData,
+            attachments: [
+                {
+                    color: 'danger',
+                    author_name: `DEPLOYMENT - ${stage.toUpperCase()}`,
+                    text: `*Codedeploy Lambda*: ${error.message.slice(0, 50)}...`,
+                    mrkdwn_in: 'text',
+                },
+            ],
+        });
         return context.fail(error);
     }
 };
