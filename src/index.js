@@ -86,19 +86,6 @@ exports.handler = async (event, context) => {
         });
     } catch (error) {
         logger.error(error);
-
-        // Notify errors to slack
-        await slackClient.chat.postMessage({
-            ...postData,
-            attachments: [
-                {
-                    color: 'danger',
-                    author_name: `DEPLOYMENT - ${stage.toUpperCase()}`,
-                    text: `*Codedeploy Lambda*: ${error.message.slice(0, 50)}...`,
-                    mrkdwn_in: 'text',
-                },
-            ],
-        });
         return context.fail(error);
     }
 };
