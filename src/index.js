@@ -15,6 +15,7 @@ const apiStage = ENV.api_stage;
 const apiDomain = ENV.api_domain;
 const webhookDocs = ENV.webhook_docs;
 const slackChannel = ENV.slack_channel;
+const deployToNetlify = ENV.deploy_to_netlifi === 'true' ? true : false;
 
 const slackClient = new WebClient(slackInfraAlertBot);
 
@@ -107,8 +108,10 @@ async function deployAPIGateway() {
     };
     const results = await doRequest(options);
 
-    // Deploy docs
-    await deployDocs(results.data)
+    // Deploy docs to netlify
+    if(deployToNetlify) {
+        await deployDocs(results.data);
+    }
 
     const swaggerContentAWS = awsAPIGTIntegration.addIntegration(results.data);
 
