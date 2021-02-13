@@ -15,7 +15,7 @@ const apiStage = ENV.api_stage;
 const apiDomain = ENV.api_domain;
 const webhookDocs = ENV.webhook_docs;
 const slackChannel = ENV.slack_channel;
-const deployToNetlify = ENV.deploy_to_netlifi === 'true' ? true : false;
+const deployToNetlify = ENV.deploy_to_netlify === 'true' ? true : false;
 
 const slackClient = new WebClient(slackInfraAlertBot);
 
