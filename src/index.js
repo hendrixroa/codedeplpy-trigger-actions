@@ -50,7 +50,7 @@ exports.handler = async (event, context) => {
     }
 
     let postData = {
-        channel: `#${slackChannel}`,
+        channel: slackChannel,
         mrkdwn: true
     };
 
