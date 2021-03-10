@@ -3,7 +3,7 @@ const AWS = require('aws-sdk');
 const FunctionShield = require('@puresec/function-shield');
 const lz = require('lz-string');
 const logger = require('pino')();
-const awsAPIGTIntegration = require('swagger-aws-api-gateway');
+const APIGatewayIntegrator = require('swagger-aws-api-gateway');
 const { WebClient } = require('@slack/web-api');
 
 const ENV = process.env;
@@ -113,7 +113,8 @@ async function deployAPIGateway() {
         await deployDocs(results.data);
     }
 
-    const swaggerContentAWS = awsAPIGTIntegration.addIntegration(results.data);
+    const awsGWInstance = new APIGatewayIntegrator(results.data);
+    const swaggerContentAWS = await awsGWInstance.addIntegration();
 
     const apigateway = new AWS.APIGateway({
         region: process.env.AWS_DEFAULT_REGION || 'us-east-1',
