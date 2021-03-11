@@ -3,7 +3,7 @@ const AWS = require('aws-sdk');
 const FunctionShield = require('@puresec/function-shield');
 const lz = require('lz-string');
 const logger = require('pino')();
-const APIGatewayIntegrator = require('swagger-aws-api-gateway');
+const APIGatewayIntegrator = require('swagger-aws-api-gateway').default;
 const { WebClient } = require('@slack/web-api');
 
 const ENV = process.env;
