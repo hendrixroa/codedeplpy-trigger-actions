@@ -16,6 +16,7 @@ const apiDomain = ENV.api_domain;
 const webhookDocs = ENV.webhook_docs;
 const slackChannel = ENV.slack_channel;
 const deployToNetlify = ENV.deploy_to_netlify === 'true' ? true : false;
+const enableAPIGWValidators = ENV.enable_api_gateway_validators && ENV.enable_api_gateway_validators === 'true' ? true : false;
 
 const slackClient = new WebClient(slackInfraAlertBot);
 
@@ -114,7 +115,7 @@ async function deployAPIGateway() {
     }
 
     const awsGWInstance = new APIGatewayIntegrator(results.data);
-    const swaggerContentAWS = await awsGWInstance.addIntegration();
+    const swaggerContentAWS = await awsGWInstance.addIntegration({ enableValidation: enableAPIGWValidators });
 
     const apigateway = new AWS.APIGateway({
         region: process.env.AWS_DEFAULT_REGION || 'us-east-1',
