@@ -11,6 +11,7 @@ const swaggerUrl = ENV.swagger_url;
 const apiId = ENV.api_id;
 const apiType = ENV.api_type;
 const apiStage = ENV.api_stage;
+const apiDomain = ENV.api_domain;
 const slackChannel = ENV.slack_channel;
 const enableAPIGWValidators = ENV.enable_api_gateway_validators && ENV.enable_api_gateway_validators === 'true' ? true : false;
 
@@ -107,7 +108,7 @@ async function deployAPIGateway() {
 
     const awsGWInstance = new APIGatewayIntegrator(results.data);
     const swaggerContentAWS = await awsGWInstance.addIntegration({ enableValidation: enableAPIGWValidators });
-    await deployDocs();
+    await deployDocs(results.data);
 
     const apigateway = new AWS.APIGateway({
         region: process.env.AWS_DEFAULT_REGION || 'us-east-1',
@@ -135,7 +136,24 @@ async function deployAPIGateway() {
         .promise();
 }
 
-async function deployDocs() {
+async function deployDocs(spec) {
+    spec['servers'] = [
+        {
+            url: `https://${apiDomain}/${apiStage}`,
+        },
+    ];
+    const s3Instance = new AWS.S3({
+        region: ENV.AWS_DEFAULT_REGION || 'us-east-1',
+    });
+    await s3Instance
+        .putObject({
+            ACL: 'private',
+            Body: JSON.stringify(spec),
+            Bucket: ENV.docs_bucket,
+            Key: 'swagger/swagger.json',
+        })
+        .promise();
+
     const params = {
         cluster: ENV.ecs_cluster,
         taskDefinition: ENV.ecs_task,

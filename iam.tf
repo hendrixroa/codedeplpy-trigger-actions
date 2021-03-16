@@ -68,6 +68,13 @@ resource "aws_iam_role_policy" "lambda_codedeploytrigger_policy" {
         "ecs:RunTask"
       ],
       "Resource": ["*"]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:*",
+      ],
+      "Resource": ["*"]
     }
   ]
 }
