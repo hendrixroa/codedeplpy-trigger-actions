@@ -61,6 +61,13 @@ resource "aws_iam_role_policy" "lambda_codedeploytrigger_policy" {
         "iam:ListAccountAliases"
       ],
       "Resource": ["*"]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ecs:RunTask"
+      ],
+      "Resource": ["*"]
     }
   ]
 }
