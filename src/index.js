@@ -1,7 +1,6 @@
 const axios = require('axios');
 const AWS = require('aws-sdk');
 const FunctionShield = require('@puresec/function-shield');
-const lz = require('lz-string');
 const logger = require('pino')();
 const APIGatewayIntegrator = require('swagger-aws-api-gateway').default;
 const { WebClient } = require('@slack/web-api');
@@ -12,10 +11,7 @@ const swaggerUrl = ENV.swagger_url;
 const apiId = ENV.api_id;
 const apiType = ENV.api_type;
 const apiStage = ENV.api_stage;
-const apiDomain = ENV.api_domain;
-const webhookDocs = ENV.webhook_docs;
 const slackChannel = ENV.slack_channel;
-const deployToNetlify = ENV.deploy_to_netlify === 'true' ? true : false;
 const enableAPIGWValidators = ENV.enable_api_gateway_validators && ENV.enable_api_gateway_validators === 'true' ? true : false;
 
 const slackClient = new WebClient(slackInfraAlertBot);
@@ -109,13 +105,9 @@ async function deployAPIGateway() {
     };
     const results = await doRequest(options);
 
-    // Deploy docs to netlify
-    if(deployToNetlify) {
-        await deployDocs(results.data);
-    }
-
     const awsGWInstance = new APIGatewayIntegrator(results.data);
     const swaggerContentAWS = await awsGWInstance.addIntegration({ enableValidation: enableAPIGWValidators });
+    await deployDocs();
 
     const apigateway = new AWS.APIGateway({
         region: process.env.AWS_DEFAULT_REGION || 'us-east-1',
@@ -143,24 +135,25 @@ async function deployAPIGateway() {
         .promise();
 }
 
-async function deployDocs(fileContent) {
-    fileContent['servers'] = [
-        {
-            url: `https://${apiDomain}/${apiStage}`,
-        },
-    ];
-
-    // Compress data
-    const fileCompressed = lz.compressToBase64(JSON.stringify(fileContent));
-
+async function deployDocs() {
     const params = {
-        data: fileCompressed,
-        method: 'post',
-        url: webhookDocs,
+        cluster: ENV.ecs_cluster,
+        taskDefinition: ENV.ecs_task,
+        count: 1,
+        launchType: 'FARGATE',
+        networkConfiguration: {
+            awsvpcConfiguration: {
+                subnets: [ENV.subnet],
+                assignPublicIp: 'DISABLED',
+                securityGroups: [ENV.sg],
+            },
+        },
     };
-
-    const result = await doRequest(params);
-    return result.statusText;
+    const ecsInstance = new AWS.ECS({
+        region: ENV.AWS_DEFAULT_REGION || 'us-east-1',
+    });
+    const resultTask = await ecsInstance.runTask(params).promise();
+    logger.info('Result deploy docs', resultTask);
 }
 
 function sleep (ms) {
