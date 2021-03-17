@@ -33,3 +33,7 @@ variable "sns_topic_arn" {}
 variable "code_source" {
   default = "src"
 }
+
+variable "execution_role_arn" {}
+
+variable "task_role_arn" {}

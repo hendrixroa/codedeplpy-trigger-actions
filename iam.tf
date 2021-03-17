@@ -12,6 +12,27 @@ resource "aws_iam_role" "lambda_codedeploytrigger" {
         "Service": "lambda.amazonaws.com"
       },
       "Effect": "Allow"
+    },
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "ecs-tasks.amazonaws.com"
+      },
+      "Effect": "Allow"
+    },
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "ecs.amazonaws.com"
+      },
+      "Effect": "Allow"
+    },
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "s3.amazonaws.com"
+      },
+      "Effect": "Allow"
     }
   ]
 }
@@ -61,6 +82,16 @@ resource "aws_iam_role_policy" "lambda_codedeploytrigger_policy" {
         "iam:ListAccountAliases"
       ],
       "Resource": ["*"]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "iam:PassRole"
+      ],
+      "Resources": [
+        "${var.execution_role_arn}",
+        "${var.task_role_arn}"
+      ]
     },
     {
       "Effect": "Allow",
