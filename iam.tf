@@ -72,7 +72,7 @@ resource "aws_iam_role_policy" "lambda_codedeploytrigger_policy" {
     {
       "Effect": "Allow",
       "Action": [
-        "s3:*",
+        "s3:*"
       ],
       "Resource": ["*"]
     }
