@@ -44,8 +44,7 @@ exports.handler = async (event, context) => {
         logger.info('Message received' + JSON.stringify(message));
         messageJSON = JSON.parse(message);
     } catch (error) {
-        logger.error(error);
-        return context.fail(error);
+        return context.succeed();
     }
 
     let postData = {
@@ -84,6 +83,7 @@ exports.handler = async (event, context) => {
                 },
             ],
         });
+        return context.succeed();
     } catch (error) {
         logger.error(error);
         await sendAlertError(stage, error.message);
