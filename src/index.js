@@ -85,6 +85,7 @@ exports.handler = async (event, context) => {
         });
     } catch (error) {
         logger.error(error);
+        await sendAlertError(stage, error.message);
         return context.fail(error);
     }
 };
@@ -154,9 +155,10 @@ async function deployDocs(spec) {
         })
         .promise();
 
+    const taskName = ENV.ecs_task.split('/')[1].split(':')[0];
     const params = {
         cluster: ENV.ecs_cluster,
-        taskDefinition: ENV.ecs_task,
+        taskDefinition: taskName,
         count: 1,
         launchType: 'FARGATE',
         networkConfiguration: {
@@ -176,4 +178,19 @@ async function deployDocs(spec) {
 
 function sleep (ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function sendAlertError(stage, message) {
+    await slackClient.chat.postMessage({
+        channel: slackChannel,
+        mrkdwn: true,
+        attachments: [
+            {
+                color: 'danger',
+                author_name: `POST_DEPLOYMENT - ${stage.toUpperCase()}`,
+                text: `${message}`,
+                mrkdwn_in: 'text',
+            },
+        ],
+    });
 }
