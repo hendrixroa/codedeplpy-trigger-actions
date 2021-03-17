@@ -40,75 +40,81 @@ EOF
 
 }
 
-resource "aws_iam_role_policy" "lambda_codedeploytrigger_policy" {
-  name = "lambda_codedeploytrigger_policy"
-  role = aws_iam_role.lambda_codedeploytrigger.id
+data "aws_iam_policy_document" "lambda_codedeploytrigger_policy" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "ec2:CreateNetworkInterface",
+      "ec2:DeleteNetworkInterface",
+      "ec2:DescribeNetworkInterfaces",
+      "ec2:ModifyNetworkInterfaceAttribute",
+      "ec2:DescribeSecurityGroups",
+      "ec2:DescribeSubnets"
+    ]
+    resources = [
+      "*"
+    ]
+  }
 
-  policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": [
-        "ec2:CreateNetworkInterface",
-        "ec2:DeleteNetworkInterface",
-        "ec2:DescribeNetworkInterfaces",
-        "ec2:ModifyNetworkInterfaceAttribute",
-        "ec2:DescribeSecurityGroups",
-        "ec2:DescribeSubnets"
-      ],
-      "Effect": "Allow",
-      "Resource": "*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "logs:CreateLogGroup",
-        "logs:CreateLogStream",
-        "logs:PutLogEvents"
-      ],
-      "Resource": [
-        "arn:aws:logs:*:*:*"
-      ]
-    },
-    {
-      "Effect": "Allow",
-      "Action": "apigateway:*",
-      "Resource": "*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "iam:ListAccountAliases"
-      ],
-      "Resource": ["*"]
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "iam:PassRole"
-      ],
-      "Resources": [
-        "${var.execution_role_arn}",
-        "${var.task_role_arn}"
-      ]
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ecs:RunTask"
-      ],
-      "Resource": ["*"]
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "s3:*"
-      ],
-      "Resource": ["*"]
-    }
-  ]
+  statement {
+    effect = "Allow"
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents"
+    ]
+    resources = [
+      "arn:aws:logs:*:*:*"
+    ]
+  }
+
+  statement {
+    effect  = "Allow"
+    actions = ["apigateway:*"]
+    resources = [
+      "*"
+    ]
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "iam:ListAccountAliases"
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "iam:PassRole"
+    ]
+    resources = [
+      var.execution_role_arn,
+      var.task_role_arn
+    ]
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "ecs:RunTask"
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:*"
+    ]
+    resources = ["*"]
+  }
+
 }
-EOF
 
+resource "aws_iam_role_policy" "lambda_codedeploytrigger_policy" {
+  name   = "lambda_codedeploytrigger_policy"
+  role   = aws_iam_role.lambda_codedeploytrigger.id
+  policy = data.aws_iam_policy_document.lambda_codedeploytrigger_policy.json
 }
