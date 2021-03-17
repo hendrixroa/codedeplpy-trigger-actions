@@ -41,6 +41,7 @@ exports.handler = async (event, context) => {
     const stage = await listAlias();
 
     try {
+        logger.info('Message received' + JSON.stringify(message));
         messageJSON = JSON.parse(message);
     } catch (error) {
         logger.error(error);
