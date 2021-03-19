@@ -160,8 +160,12 @@ async function deployDocs(spec) {
     const params = {
         cluster: ENV.ecs_cluster,
         taskDefinition: taskName,
-        count: 1,
-        launchType: 'FARGATE',
+        capacityProviderStrategy: [
+            {
+                capacityProvider: 'FARGATE_SPOT',
+                weight: 1,
+            },
+        ],
         networkConfiguration: {
             awsvpcConfiguration: {
                 subnets: [ENV.subnet],
