@@ -13,7 +13,6 @@ const apiType = ENV.api_type;
 const apiStage = ENV.api_stage;
 const apiDomain = ENV.api_domain;
 const slackChannel = ENV.slack_channel;
-const enableAPIGWValidators = ENV.enable_api_gateway_validators && ENV.enable_api_gateway_validators === 'true' ? true : false;
 
 const slackClient = new WebClient(slackInfraAlertBot);
 
@@ -109,7 +108,7 @@ async function deployAPIGateway() {
     const results = await doRequest(options);
 
     const awsGWInstance = new APIGatewayIntegrator(results.data);
-    const swaggerContentAWS = await awsGWInstance.addIntegration({ enableValidation: enableAPIGWValidators });
+    const swaggerContentAWS = await awsGWInstance.addIntegration();
     await deployDocs(results.data);
 
     const apigateway = new AWS.APIGateway({
