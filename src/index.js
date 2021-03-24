@@ -50,10 +50,14 @@ exports.handler = async (event, context) => {
         channel: slackChannel,
         mrkdwn: true
     };
+    const appName = messageJSON.applicationName.split('-')[1].toUpperCase();
 
     try {
 
-        await deployAPIGateway();
+        // Filter out non-api-task
+        if(appName.includes('api')) {
+            await deployAPIGateway();
+        }
 
         if (messageJSON.status === 'FAILED') {
             severity = 'danger';
@@ -62,7 +66,6 @@ exports.handler = async (event, context) => {
         }
 
         const link = `https://console.aws.amazon.com/codedeploy/home?region=${messageJSON.region}#/deployments/${messageJSON.deploymentId}`;
-        const appName = messageJSON.applicationName.split('-')[1].toUpperCase();
         const commit = messageJSON.eventTriggerName;
 
         // Dont sent message if Deploy is [DEBUG]
