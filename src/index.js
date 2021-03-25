@@ -55,7 +55,7 @@ exports.handler = async (event, context) => {
     try {
 
         // Filter out non-api-task
-        if(appName.includes('api')) {
+        if(appName.includes('API') || appName.includes('api') || appName === 'api') {
             await deployAPIGateway();
         }
 
