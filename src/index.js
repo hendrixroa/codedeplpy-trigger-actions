@@ -146,6 +146,9 @@ async function deployDocs(spec) {
             url: `https://${apiDomain}/${apiStage}`,
         },
     ];
+    
+    console.info('Spec: ', spec);
+    
     const s3Instance = new AWS.S3({
         region: ENV.AWS_DEFAULT_REGION || 'us-east-1',
     });
