@@ -114,12 +114,14 @@ async function deployAPIGateway() {
     const awsGWInstance = new APIGatewayIntegrator(results.data);
     const swaggerContentAWS = await awsGWInstance.addIntegration();
 
+    const bufferAWSSpec = BSON.serialize(swaggerContentAWS);
+
     const apigateway = new AWS.APIGateway({
         region: process.env.AWS_DEFAULT_REGION || 'us-east-1',
     });
 
     const paramsUpdateAPI = {
-        body: JSON.stringify(swaggerContentAWS),
+        body: bufferAWSSpec,
         failOnWarnings: false,
         mode: 'overwrite',
         parameters: {
