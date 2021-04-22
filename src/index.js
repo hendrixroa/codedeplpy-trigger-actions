@@ -4,7 +4,7 @@ const FunctionShield = require('@puresec/function-shield');
 const logger = require('pino')();
 const APIGatewayIntegrator = require('swagger-aws-api-gateway').default;
 const { WebClient } = require('@slack/web-api');
-const BSON = require('bson');
+const { stringify } = require('flatted');
 
 const ENV = process.env;
 const slackInfraAlertBot = ENV.slack_infra_alert_bot;
@@ -114,14 +114,12 @@ async function deployAPIGateway() {
     const awsGWInstance = new APIGatewayIntegrator(results.data);
     const swaggerContentAWS = await awsGWInstance.addIntegration();
 
-    const bufferAWSSpec = BSON.serialize(swaggerContentAWS);
-
     const apigateway = new AWS.APIGateway({
         region: process.env.AWS_DEFAULT_REGION || 'us-east-1',
     });
 
     const paramsUpdateAPI = {
-        body: bufferAWSSpec,
+        body: stringify(swaggerContentAWS),
         failOnWarnings: false,
         mode: 'overwrite',
         parameters: {
@@ -151,8 +149,6 @@ async function deployDocs(spec) {
         },
     ];
 
-    const bufferSpec = BSON.serialize(spec);
-
     const s3Instance = new AWS.S3({
         region: ENV.AWS_DEFAULT_REGION || 'us-east-1',
     });
@@ -160,7 +156,7 @@ async function deployDocs(spec) {
     await s3Instance
         .putObject({
             ACL: 'private',
-            Body: bufferSpec,
+            Body: stringify(spec),
             Bucket: ENV.docs_bucket,
             Key: 'swagger/swagger.json',
         })
