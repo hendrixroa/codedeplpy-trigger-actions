@@ -4,7 +4,6 @@ const FunctionShield = require('@puresec/function-shield');
 const logger = require('pino')();
 const APIGatewayIntegrator = require('swagger-aws-api-gateway').default;
 const { WebClient } = require('@slack/web-api');
-const { stringify } = require('flatted');
 
 const ENV = process.env;
 const slackInfraAlertBot = ENV.slack_infra_alert_bot;
@@ -119,7 +118,7 @@ async function deployAPIGateway() {
     });
 
     const paramsUpdateAPI = {
-        body: stringify(swaggerContentAWS),
+        body: JSON.stringify(swaggerContentAWS, getCircularReplacer()),
         failOnWarnings: false,
         mode: 'overwrite',
         parameters: {
@@ -128,6 +127,7 @@ async function deployAPIGateway() {
         restApiId: apiId,
     };
     await apigateway.putRestApi(paramsUpdateAPI).promise();
+    console.log('after put rest api');
 
     const paramsDeployAPI = {
         restApiId: apiId,
@@ -140,6 +140,8 @@ async function deployAPIGateway() {
         .promise();
 
     await deployDocs(results.data);
+    
+    console.log('after api deploy');
 }
 
 async function deployDocs(spec) {
@@ -156,7 +158,7 @@ async function deployDocs(spec) {
     await s3Instance
         .putObject({
             ACL: 'private',
-            Body: stringify(spec),
+            Body: JSON.stringify(spec, getCircularReplacer()),
             Bucket: ENV.docs_bucket,
             Key: 'swagger/swagger.json',
         })
@@ -204,4 +206,17 @@ async function sendAlertError(stage, message) {
             },
         ],
     });
+}
+
+function getCircularReplacer() {
+  const seen = new WeakSet();
+  return (key, value) => {
+    if (typeof value === "object" && value !== null) {
+      if (seen.has(value)) {
+        return;
+      }
+      seen.add(value);
+    }
+    return value;
+  };
 }
