@@ -18,9 +18,6 @@ const slackClient = new WebClient(slackInfraAlertBot);
 exports.handler = async (event, context) => {
     context.callbackWaitsForEmptyEventLoop = false;
 
-    // Sleep 3 minute to wait by API deployment switch and reroute traffic
-    await sleep(60 * 3000);
-
     let severity = 'good';
     let message = event.Records[0].Sns.Message;
     let messageJSON = {};
@@ -174,10 +171,6 @@ async function deployDocs(spec) {
     });
     const resultTask = await ecsInstance.runTask(params).promise();
     logger.info('Result deploy docs', resultTask);
-}
-
-function sleep (ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 async function sendAlertError(stage, message) {
