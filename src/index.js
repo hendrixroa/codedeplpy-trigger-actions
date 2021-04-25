@@ -92,7 +92,23 @@ async function deployAPIGateway() {
         method: 'get',
         url: swaggerUrl,
     };
-    const results = await doRequest(options);
+
+    const numTries = 10;
+    let indexTries = 0;
+    let results;
+    while (indexTries < numTries){
+        await sleep(1000);
+
+        try {
+            results = await doRequest(options);
+            if(results.data) {
+                break;
+            }
+        } catch (err) {
+            logger.info('Error fetching swagger spec: ' + err.message + ' at tries number: ' + indexTries);
+        }
+        indexTries++;
+    }
 
     const awsGWInstance = new APIGatewayIntegrator(results.data);
     const swaggerContentAWS = await awsGWInstance.addIntegration();
@@ -171,6 +187,10 @@ async function deployDocs(spec) {
     });
     const resultTask = await ecsInstance.runTask(params).promise();
     logger.info('Result deploy docs', resultTask);
+}
+
+function sleep (ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 async function sendAlertError(stage, message) {
