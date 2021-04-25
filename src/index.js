@@ -1,6 +1,5 @@
 const axios = require('axios');
 const AWS = require('aws-sdk');
-const FunctionShield = require('@puresec/function-shield');
 const logger = require('pino')();
 const APIGatewayIntegrator = require('swagger-aws-api-gateway').default;
 const { WebClient } = require('@slack/web-api');
@@ -15,18 +14,6 @@ const apiDomain = ENV.api_domain;
 const slackChannel = ENV.slack_channel;
 
 const slackClient = new WebClient(slackInfraAlertBot);
-
-FunctionShield.configure(
-    {
-        policy: {
-            read_write_tmp: 'alert',
-            create_child_process: 'alert',
-            outbound_connectivity: 'alert',
-            read_handler: 'alert'
-        },
-        disable_analytics: false,
-        token: ENV.function_shield_token
-    });
 
 exports.handler = async (event, context) => {
     context.callbackWaitsForEmptyEventLoop = false;
