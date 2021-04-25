@@ -118,7 +118,7 @@ async function deployAPIGateway() {
     });
 
     const paramsUpdateAPI = {
-        body: JSON.stringify(swaggerContentAWS, getCircularReplacer()),
+        body: JSON.stringify(swaggerContentAWS),
         failOnWarnings: false,
         mode: 'overwrite',
         parameters: {
@@ -158,7 +158,7 @@ async function deployDocs(spec) {
     await s3Instance
         .putObject({
             ACL: 'private',
-            Body: JSON.stringify(spec, getCircularReplacer()),
+            Body: JSON.stringify(spec),
             Bucket: ENV.docs_bucket,
             Key: 'swagger/swagger.json',
         })
@@ -206,17 +206,4 @@ async function sendAlertError(stage, message) {
             },
         ],
     });
-}
-
-function getCircularReplacer() {
-  const seen = new WeakSet();
-  return (key, value) => {
-    if (typeof value === "object" && value !== null) {
-      if (seen.has(value)) {
-        return;
-      }
-      seen.add(value);
-    }
-    return value;
-  };
 }
