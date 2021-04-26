@@ -1,16 +1,9 @@
-const axios = require('axios');
 const AWS = require('aws-sdk');
 const logger = require('pino')();
-const APIGatewayIntegrator = require('swagger-aws-api-gateway').default;
 const { WebClient } = require('@slack/web-api');
 
 const ENV = process.env;
 const slackInfraAlertBot = ENV.slack_infra_alert_bot;
-const swaggerUrl = ENV.swagger_url;
-const apiId = ENV.api_id;
-const apiType = ENV.api_type;
-const apiStage = ENV.api_stage;
-const apiDomain = ENV.api_domain;
 const slackChannel = ENV.slack_channel;
 
 const slackClient = new WebClient(slackInfraAlertBot);
@@ -37,11 +30,6 @@ exports.handler = async (event, context) => {
     const appName = messageJSON.applicationName.split('-')[1].toUpperCase();
 
     try {
-
-        // Filter out non-api-task
-        if(appName.includes('API') || appName.includes('api') || appName === 'api') {
-            await deployAPIGateway();
-        }
 
         if (messageJSON.status === 'FAILED') {
             severity = 'danger';
@@ -77,120 +65,10 @@ exports.handler = async (event, context) => {
     }
 };
 
-async function doRequest(options) {
-    return axios(options);
-}
-
 async function listAlias(){
     const iam = new AWS.IAM();
     const aliases = await iam.listAccountAliases({}).promise();
     return aliases.AccountAliases[0].includes('staging') ? 'staging' : 'production';
-}
-
-async function deployAPIGateway() {
-    const options = {
-        method: 'get',
-        url: swaggerUrl,
-    };
-
-    const numTries = 10;
-    let indexTries = 0;
-    let results;
-    while (indexTries < numTries){
-        await sleep(1000);
-
-        try {
-            results = await doRequest(options);
-            if(results.data) {
-                break;
-            }
-        } catch (err) {
-            logger.info('Error fetching swagger spec: ' + err.message + ' at tries number: ' + indexTries);
-        }
-        indexTries++;
-    }
-
-    const awsGWInstance = new APIGatewayIntegrator(results.data);
-    const swaggerContentAWS = await awsGWInstance.addIntegration();
-
-    const apigateway = new AWS.APIGateway({
-        region: process.env.AWS_DEFAULT_REGION || 'us-east-1',
-    });
-
-    const paramsUpdateAPI = {
-        body: JSON.stringify(swaggerContentAWS),
-        failOnWarnings: false,
-        mode: 'overwrite',
-        parameters: {
-            endpointConfigurationTypes: apiType,
-        },
-        restApiId: apiId,
-    };
-    await apigateway.putRestApi(paramsUpdateAPI).promise();
-    console.log('after put rest api');
-
-    const paramsDeployAPI = {
-        restApiId: apiId,
-        stageName: apiStage,
-        tracingEnabled: true,
-    };
-
-    await apigateway
-        .createDeployment({ ...paramsDeployAPI })
-        .promise();
-
-    await deployDocs(results.data);
-    
-    console.log('after api deploy');
-}
-
-async function deployDocs(spec) {
-    spec['servers'] = [
-        {
-            url: `https://${apiDomain}/${apiStage}`,
-        },
-    ];
-
-    const s3Instance = new AWS.S3({
-        region: ENV.AWS_DEFAULT_REGION || 'us-east-1',
-    });
-
-    await s3Instance
-        .putObject({
-            ACL: 'private',
-            Body: JSON.stringify(spec),
-            Bucket: ENV.docs_bucket,
-            Key: 'swagger/swagger.json',
-        })
-        .promise();
-
-    const taskName = ENV.ecs_task.split('/')[1].split(':')[0];
-    const params = {
-        cluster: ENV.ecs_cluster,
-        taskDefinition: taskName,
-        capacityProviderStrategy: [
-            {
-                capacityProvider: 'FARGATE_SPOT',
-                weight: 1,
-            },
-        ],
-        networkConfiguration: {
-            awsvpcConfiguration: {
-                subnets: [ENV.subnet],
-                assignPublicIp: 'DISABLED',
-                securityGroups: [ENV.sg],
-            },
-        },
-    };
-    const ecsInstance = new AWS.ECS({
-        region: ENV.AWS_DEFAULT_REGION || 'us-east-1',
-    });
-    const resultTask = await ecsInstance.runTask(params).promise();
-    logger.info('Result deploy docs', resultTask);
-}
-
-function sleep (ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 async function sendAlertError(stage, message) {
