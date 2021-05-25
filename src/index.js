@@ -5,6 +5,7 @@ const { WebClient } = require('@slack/web-api');
 const ENV = process.env;
 const slackInfraAlertBot = ENV.slack_infra_alert_bot;
 const slackChannel = ENV.slack_channel;
+const silent = ENV.silent && ENV.silent === "true" ? true : false;
 
 const slackClient = new WebClient(slackInfraAlertBot);
 
@@ -46,21 +47,25 @@ exports.handler = async (event, context) => {
             return context.succeed();
         }
 
-        await slackClient.chat.postMessage({
-            ...postData,
-            attachments: [
-                {
-                    color: severity,
-                    author_name: `DEPLOYMENT - ${stage.toUpperCase()}`,
-                    text: `*${appName}*: ${commit} (<${link}|Codedeploy>)`,
-                    mrkdwn_in: 'text',
-                },
-            ],
-        });
+        if(silent === false) {
+            await slackClient.chat.postMessage({
+                ...postData,
+                attachments: [
+                    {
+                        color: severity,
+                        author_name: `DEPLOYMENT - ${stage.toUpperCase()}`,
+                        text: `*${appName}*: ${commit} (<${link}|Codedeploy>)`,
+                        mrkdwn_in: 'text',
+                    },
+                ],
+            });
+        }
         return context.succeed();
     } catch (error) {
         logger.error(error);
-        await sendAlertError(stage, error.message);
+        if(silent === false) {
+            await sendAlertError(stage, error.message);
+        }
         return context.fail(error);
     }
 };
